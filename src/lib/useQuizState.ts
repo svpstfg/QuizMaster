@@ -105,6 +105,16 @@ export function useQuizState() {
     [state, save],
   );
 
+  const updateQuestion = useCallback(
+    (id: string, patch: Omit<Question, 'id' | 'used'>) => {
+      save({
+        ...state,
+        questions: state.questions.map((q) => (q.id === id ? { ...q, ...patch } : q)),
+      });
+    },
+    [state, save],
+  );
+
   const markUsed = useCallback(
     (id: string) => {
       save({
@@ -182,6 +192,7 @@ export function useQuizState() {
     addQuestion,
     bulkAddQuestions,
     removeQuestion,
+    updateQuestion,
     markUsed,
     updateSettings,
     addScore,

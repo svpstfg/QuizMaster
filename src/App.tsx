@@ -108,6 +108,7 @@ export default function App() {
               onAddQuestion={quiz.addQuestion}
               onBulkAdd={quiz.bulkAddQuestions}
               onRemoveQuestion={quiz.removeQuestion}
+              onUpdateQuestion={quiz.updateQuestion}
               onAddGroup={quiz.addGroup}
               onRemoveGroup={quiz.removeGroup}
               onUpdateSettings={quiz.updateSettings}

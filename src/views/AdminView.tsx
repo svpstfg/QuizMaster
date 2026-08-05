@@ -16,6 +16,7 @@ interface Props {
   onAddQuestion: (q: Omit<Question, 'id' | 'used'>) => void;
   onBulkAdd: (items: Omit<Question, 'id' | 'used'>[]) => number;
   onRemoveQuestion: (id: string) => void;
+  onUpdateQuestion: (id: string, patch: Omit<Question, 'id' | 'used'>) => void;
   onAddGroup: (name: string, emoji: string, color: string) => void;
   onRemoveGroup: (id: string) => void;
   onUpdateSettings: (patch: Partial<AppState['settings']>) => void;
@@ -78,10 +79,11 @@ function TabBtn({ active, onClick, icon, label }: { active: boolean; onClick: ()
 
 // --- Questions tab -------------------------------------------------------
 
-function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onLoadSampleQuestions }: Props) {
+function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onUpdateQuestion, onLoadSampleQuestions }: Props) {
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [showJson, setShowJson] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const exportJson = () => {
@@ -110,9 +112,7 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onLoa
     media: undefined,
   });
 
-  const submit = () => {
-    if (!form.question || !form.answer) return;
-    onAddQuestion(form);
+  const resetForm = () => {
     setForm({
       section: 'General Knowledge',
       question: '',
@@ -123,7 +123,39 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onLoa
       options: { A: '', B: '', C: '', D: '' },
       media: undefined,
     });
+  };
+
+  const submit = () => {
+    if (!form.question || !form.answer) return;
+    if (editingId) {
+      onUpdateQuestion(editingId, form);
+      setEditingId(null);
+    } else {
+      onAddQuestion(form);
+    }
+    resetForm();
     setShowAdd(false);
+  };
+
+  const startEdit = (q: Question) => {
+    setEditingId(q.id);
+    setForm({
+      section: q.section,
+      question: q.question,
+      answer: q.answer,
+      type: q.type,
+      difficulty: q.difficulty,
+      marks: q.marks,
+      options: { ...q.options },
+      media: q.media,
+    });
+    setShowAdd(true);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setShowAdd(false);
+    resetForm();
   };
 
   return (
@@ -239,8 +271,8 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onLoa
               )}
             </div>
             <div className="flex gap-2 mt-4">
-              <button onClick={submit} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 text-white text-sm font-medium">Add Question</button>
-              <button onClick={() => setShowAdd(false)} className="px-5 py-2.5 rounded-xl glass text-white/70 text-sm hover:bg-white/10">Cancel</button>
+              <button onClick={submit} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 text-white text-sm font-medium">{editingId ? 'Save Changes' : 'Add Question'}</button>
+              <button onClick={cancelEdit} className="px-5 py-2.5 rounded-xl glass text-white/70 text-sm hover:bg-white/10">Cancel</button>
             </div>
           </motion.div>
         )}
@@ -308,9 +340,14 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onLoa
                 {q.media?.url && <div className="text-xs text-violet-300 mt-1">Media: {q.media.type} • {q.media.url}</div>}
                 <div className="text-xs text-white/40">Answer: {q.answer}</div>
               </div>
-              <button onClick={() => onRemoveQuestion(q.id)} className="p-2 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-400/10 transition shrink-0">
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex gap-2 shrink-0">
+                <button onClick={() => startEdit(q)} className="px-3 py-2 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/10 transition">
+                  Edit
+                </button>
+                <button onClick={() => onRemoveQuestion(q.id)} className="p-2 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-400/10 transition">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))
         )}
