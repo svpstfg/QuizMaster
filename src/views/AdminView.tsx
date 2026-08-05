@@ -107,12 +107,22 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onLoa
     difficulty: 'medium',
     marks: 10,
     options: { A: '', B: '', C: '', D: '' },
+    media: undefined,
   });
 
   const submit = () => {
     if (!form.question || !form.answer) return;
     onAddQuestion(form);
-    setForm({ ...form, question: '', answer: '', options: { A: '', B: '', C: '', D: '' } });
+    setForm({
+      section: 'General Knowledge',
+      question: '',
+      answer: '',
+      type: 'text',
+      difficulty: 'medium',
+      marks: 10,
+      options: { A: '', B: '', C: '', D: '' },
+      media: undefined,
+    });
     setShowAdd(false);
   };
 
@@ -171,6 +181,53 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onLoa
                 </select>
               </Field>
               <Field label="Marks"><input type="number" value={form.marks} onChange={(e) => setForm({ ...form, marks: Number(e.target.value) })} className={inputCls} /></Field>
+              <div className="sm:col-span-2 rounded-2xl border border-white/10 bg-black/10 p-3">
+                <div className="text-sm font-medium mb-2">Media attachment (optional)</div>
+                <div className="grid sm:grid-cols-3 gap-2">
+                  <Field label="Type">
+                    <select
+                      value={form.media?.type || ''}
+                      onChange={(e) => setForm({
+                        ...form,
+                        media: {
+                          type: (e.target.value as Question['media'] extends undefined ? never : Question['media']['type']) || 'image',
+                          url: form.media?.url || '',
+                          alt: form.media?.alt || '',
+                        },
+                      })}
+                      className={inputCls}
+                    >
+                      <option value="">None</option>
+                      <option value="image">Image</option>
+                      <option value="audio">Audio</option>
+                      <option value="video">Video</option>
+                      <option value="youtube">YouTube</option>
+                    </select>
+                  </Field>
+                  <Field label="URL">
+                    <input
+                      value={form.media?.url || ''}
+                      onChange={(e) => setForm({
+                        ...form,
+                        media: form.media ? { ...form.media, url: e.target.value } : { type: 'image', url: e.target.value },
+                      })}
+                      className={inputCls}
+                      placeholder="https://..."
+                    />
+                  </Field>
+                  <Field label="Alt text">
+                    <input
+                      value={form.media?.alt || ''}
+                      onChange={(e) => setForm({
+                        ...form,
+                        media: form.media ? { ...form.media, alt: e.target.value } : { type: 'image', url: '', alt: e.target.value },
+                      })}
+                      className={inputCls}
+                      placeholder="Describe the media"
+                    />
+                  </Field>
+                </div>
+              </div>
               {form.type === 'mcq' && (
                 <div className="sm:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {(['A', 'B', 'C', 'D'] as const).map((k) => (
@@ -248,6 +305,7 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onLoa
                   {q.used && <span className="text-[10px] px-2 py-0.5 bg-emerald-400/15 text-emerald-300 rounded-full uppercase tracking-widest">used</span>}
                 </div>
                 <div className="text-white/90 truncate">{q.question}</div>
+                {q.media?.url && <div className="text-xs text-violet-300 mt-1">Media: {q.media.type} • {q.media.url}</div>}
                 <div className="text-xs text-white/40">Answer: {q.answer}</div>
               </div>
               <button onClick={() => onRemoveQuestion(q.id)} className="p-2 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-400/10 transition shrink-0">

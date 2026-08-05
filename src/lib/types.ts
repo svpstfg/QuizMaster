@@ -1,4 +1,11 @@
 export type QuestionType = 'text' | 'mcq' | 'truefalse';
+export type QuestionMediaType = 'image' | 'audio' | 'video' | 'youtube';
+
+export interface QuestionMedia {
+  type: QuestionMediaType;
+  url: string;
+  alt?: string;
+}
 
 export interface Question {
   id: string;
@@ -9,6 +16,7 @@ export interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
   marks: number;
   options: { A: string; B: string; C: string; D: string };
+  media?: QuestionMedia;
   used: boolean;
 }
 
@@ -114,6 +122,27 @@ export function downloadJson(filename: string, data: unknown) {
   URL.revokeObjectURL(url);
 }
 
+export function normalizeQuestionMedia(input: unknown, fallback?: Record<string, unknown>): QuestionMedia | undefined {
+  const candidate = (typeof input === 'object' && input !== null ? input as Record<string, unknown> : undefined) ?? fallback;
+  if (!candidate) return undefined;
+
+  const typeValue = typeof candidate.type === 'string' ? candidate.type : typeof candidate.mediaType === 'string' ? candidate.mediaType : '';
+  const urlValue = typeof candidate.url === 'string' ? candidate.url : typeof candidate.mediaUrl === 'string' ? candidate.mediaUrl : '';
+  const altValue = typeof candidate.alt === 'string' ? candidate.alt : typeof candidate.mediaAlt === 'string' ? candidate.mediaAlt : '';
+
+  const normalizedType = typeValue === 'image' || typeValue === 'audio' || typeValue === 'video' || typeValue === 'youtube'
+    ? typeValue
+    : undefined;
+
+  if (!normalizedType || !urlValue) return undefined;
+
+  return {
+    type: normalizedType,
+    url: urlValue,
+    alt: altValue || undefined,
+  };
+}
+
 export function parseJsonQuestions(text: string): Omit<Question, 'id' | 'used'>[] {
   let parsed: unknown;
   try {
@@ -128,6 +157,7 @@ export function parseJsonQuestions(text: string): Omit<Question, 'id' | 'used'>[
       const type = ((r.type as string) || 'text') as QuestionType;
       const difficulty = ((r.difficulty as string) || 'medium') as Question['difficulty'];
       const opts = (r.options as Record<string, string>) || {};
+      const media = normalizeQuestionMedia(r.media, r);
       return {
         section: (r.section as string) || 'General',
         question: (r.question as string) || '',
@@ -141,6 +171,7 @@ export function parseJsonQuestions(text: string): Omit<Question, 'id' | 'used'>[
           C: opts.C || opts.c || '',
           D: opts.D || opts.d || '',
         },
+        media,
       } as Omit<Question, 'id' | 'used'>;
     })
     .filter((q) => q.question && q.answer);

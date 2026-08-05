@@ -73,6 +73,52 @@ export default function QuestionView({ state, question, onBack, onScore, onDone 
     : 0;
   const timerColor = timer <= 5 ? '#ef4444' : timer <= 10 ? '#f59e0b' : '#10b981';
 
+  const renderMedia = () => {
+    if (!question.media?.url) return null;
+
+    if (question.media.type === 'image') {
+      return (
+        <div className="mb-6">
+          <img src={question.media.url} alt={question.media.alt || question.question} className="max-h-80 w-full object-contain rounded-2xl border border-white/10 bg-black/20" />
+        </div>
+      );
+    }
+
+    if (question.media.type === 'audio') {
+      return (
+        <div className="mb-6 rounded-2xl border border-white/10 bg-black/20 p-4">
+          <div className="text-sm text-white/60 mb-2">Audio clue</div>
+          <audio controls className="w-full" src={question.media.url} />
+        </div>
+      );
+    }
+
+    if (question.media.type === 'video') {
+      return (
+        <div className="mb-6 rounded-2xl border border-white/10 bg-black/20 p-3">
+          <video controls className="w-full max-h-80 rounded-xl" src={question.media.url} />
+        </div>
+      );
+    }
+
+    if (question.media.type === 'youtube') {
+      const embedUrl = question.media.url.replace('https://www.youtube.com/watch?v=', 'https://www.youtube.com/embed/').replace('https://youtu.be/', 'https://www.youtube.com/embed/');
+      return (
+        <div className="mb-6 rounded-2xl border border-white/10 bg-black/20 p-3">
+          <iframe
+            className="w-full aspect-video rounded-xl"
+            src={embedUrl}
+            title={question.media.alt || question.question}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="min-h-screen flex flex-col px-6 py-10">
       <div className="w-full max-w-4xl mx-auto flex items-center justify-between mb-6">
@@ -105,6 +151,7 @@ export default function QuestionView({ state, question, onBack, onScore, onDone 
         <div className="relative">
           <div className="text-xs uppercase tracking-widest text-white/40 mb-4">Question</div>
           <h2 className="font-display text-4xl md:text-5xl leading-tight mb-6">{question.question}</h2>
+          {renderMedia()}
 
           {/* MCQ options */}
           {question.type === 'mcq' && (
