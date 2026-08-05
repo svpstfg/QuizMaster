@@ -85,6 +85,7 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onUpd
   const [showJson, setShowJson] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const exportJson = () => {
     const clean = state.questions.map(({ id, used, ...rest }) => rest);
@@ -156,6 +157,19 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onUpd
     setEditingId(null);
     setShowAdd(false);
     resetForm();
+  };
+
+  const handleImageUpload = (file: File | null) => {
+    if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
+    setForm({
+      ...form,
+      media: {
+        type: 'image',
+        url: previewUrl,
+        alt: file.name,
+      },
+    });
   };
 
   return (
@@ -246,6 +260,24 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onUpd
                       className={inputCls}
                       placeholder="https://..."
                     />
+                    {form.media?.type === 'image' && (
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          className="px-3 py-2 rounded-lg bg-white/10 text-xs text-white/80 hover:bg-white/20"
+                        >
+                          Upload local image
+                        </button>
+                        <input
+                          ref={imageInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageUpload(e.target.files?.[0] || null)}
+                        />
+                      </div>
+                    )}
                   </Field>
                   <Field label="Alt text">
                     <input
@@ -260,6 +292,12 @@ function QuestionsTab({ state, onAddQuestion, onBulkAdd, onRemoveQuestion, onUpd
                   </Field>
                 </div>
               </div>
+              {form.media?.type === 'image' && form.media.url && (
+                <div className="rounded-2xl border border-white/10 bg-black/10 p-3 mt-2">
+                  <div className="text-sm font-medium mb-2">Preview</div>
+                  <img src={form.media.url} alt={form.media.alt || 'Question media'} className="max-h-48 rounded-xl object-contain" />
+                </div>
+              )}
               {form.type === 'mcq' && (
                 <div className="sm:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {(['A', 'B', 'C', 'D'] as const).map((k) => (
